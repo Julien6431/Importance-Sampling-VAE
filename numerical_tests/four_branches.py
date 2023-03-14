@@ -81,6 +81,8 @@ p=0.25
 
 proba, samples, N_tot = CEIS_VAE(N,p,ot_function,t,input_distr,latent_dim=2,K=75)
 
+print(f"Estimated failure probability : {proba}")
+
 #%%
 
 fig, ax = plt.subplots(figsize=(15,15))
