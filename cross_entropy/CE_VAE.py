@@ -9,6 +9,7 @@ Created on Tue Feb 28 18:42:19 2023
 #%% Modules
 
 import numpy as np
+import openturns as ot
 from VAE_IS_VP import fitted_vae
 
 #%% Cross entropy with VAE
@@ -60,27 +61,38 @@ def CEIS_VAE(N,p,phi,t,distr,latent_dim=2,K=75):
     N_tot = 0 #number of calls to the function
     gamma_hat = np.zeros(max_it)
     
+   
+    if type(phi)==ot.func.Function:
+        compute_output = lambda x : np.array(phi(x)) 
+    else:
+        compute_output = lambda x : phi(np.array(x)).reshape((-1,1))
+    
     
     #Initialisation
     X = distr.getSample(N)
-    Y = np.array(phi(X))
+    samples = [X]
+    Y = compute_output(X)
+    print(Y.shape)
     N_tot += N
+    
     gamma_hat[0] = np.minimum(t,np.nanpercentile(Y,100*(1-p)))
     I = (Y>=gamma_hat[0])
+    
+    if gamma_hat[0]>=t:
+        return np.mean(I),samples,N_tot
+    
     W = I
         
-    samples = [X]
-        
     #Adaptive algorithm
-    for j in range(1,max_it+1):
+    for j in range(1,max_it):
         
         vae,_,_ = fitted_vae(np.array(X).astype("float32"),W.astype("float32"),latent_dim,K,epochs=100,batch_size=100)
         
         X,g_X = vae.getSample(N,with_pdf=True)
+        samples.append(X)
         f_X = np.array(distr.computePDF(X))
     
-        samples.append(X)
-        Y = np.array(phi(X))
+        Y = compute_output(X)
         N_tot += N
         
         #Computation of the new threshold
@@ -100,9 +112,7 @@ def CEIS_VAE(N,p,phi,t,distr,latent_dim=2,K=75):
 
     #Estimation of the failure probability  
     W_final = f_X/np.array(g_X)
-    W_final = W_final.flatten()
     I_final = (Y >= t)
-    I_final = I_final.flatten()
     Pr = np.mean(I_final * W_final)
 
     return Pr, samples, N_tot

@@ -164,7 +164,9 @@ class VAE(keras.Model):
         if with_pdf==True:
             new_sample_np = np.array(new_sample)
             g_X = np.zeros((N,1))
-            inv_det = 1/np.prod(std_matrix,axis=1)
+            log_det = 0.5*np.sum(X_log_var,axis=1)
+            inv_det = 1/np.exp(log_det)
+            #inv_det = 1/np.prod(std_matrix,axis=1)
             
             for i in range(N):
                 point = (new_sample_np[i] - X_mean)/std_matrix

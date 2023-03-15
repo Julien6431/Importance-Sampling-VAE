@@ -18,8 +18,8 @@ def create_encoder(input_dim,latent_dim):
     encoder_inputs = keras.Input(shape=(input_dim,))
     x = layers.Dense(32, activation="linear")(encoder_inputs)
     x = layers.Dense(16, activation="linear")(x)
-    z = layers.Dense(latent_dim, activation="linear", name="z_mean")(x)
-    z_log_var = layers.Dense(latent_dim, activation="linear", name="z_log_var")(x)
+    z = layers.Dense(latent_dim, activation="linear")(x)
+    z_log_var = layers.Dense(latent_dim, activation="linear")(x)
     encoder = keras.Model(encoder_inputs, [z,z_log_var], name="encoder")
     return encoder
 

@@ -12,7 +12,9 @@ import openturns as ot
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import sys
-sys.path.append("../src/")
+sys.path.append("../cross_entropy/")
+from CE_SG import CEIS_SG
+from CE_GM import CEIS_GM
 from CE_VAE import CEIS_VAE
 
 #%% Test function
@@ -72,7 +74,7 @@ ax.scatter(X_failure[:,0],X_failure[:,1],color='red',s=6)
 
 #%%
 
-input_dim = 2
+input_dim = 100
 ot_function = ot.PythonFunction(input_dim,1,four_branchs)
 input_distr = ot.Normal(input_dim)
 
@@ -80,6 +82,7 @@ N=10**4
 p=0.25
 
 proba, samples, N_tot = CEIS_VAE(N,p,ot_function,t,input_distr,latent_dim=2,K=75)
+#proba, samples,_,N_tot = CEIS_GM(N,p,ot_function,t,input_distr,4)
 
 print(f"Estimated failure probability : {proba}")
 
@@ -90,4 +93,22 @@ ax.contour(X1, X2, values_function, [t], colors="r", linewidths=3)
 for sample in samples:
     ax.plot(*np.array(sample).T, ".", markersize=4)
     
-fig.savefig("Figures/four_branches_ce_samples_dim2.png",bbox_inches='tight')
+#fig.savefig("Figures/four_branches_ce_samples_dim2.png",bbox_inches='tight')
+
+
+#%%
+
+n_rep = 10**2
+N = 10**4
+p = 0.2
+
+proba_ceis_vae = np.zeros(n_rep)
+proba_ceis_sg = np.zeros(n_rep)
+proba_ceis_gm = np.zeros(n_rep)
+
+for n in tqdm(range(n_rep)):
+    proba_vae_n,_,_ = CEIS_VAE(N,p,ot_function,t,input_distr,latent_dim=2,K=75)
+    proba_ceis_vae[n] = proba_vae_n
+    
+    
+np.savez(f"Data/four_branches_failprob_estimations_{input_dim}.npz")
