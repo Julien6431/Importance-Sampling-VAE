@@ -17,6 +17,8 @@ from CE_SG import CEIS_SG
 from CE_GM import CEIS_GM
 from CE_VAE import CEIS_VAE
 
+ot.Log.Show(ot.Log.NONE)
+
 #%% Test function
 
 def four_branchs(x):
