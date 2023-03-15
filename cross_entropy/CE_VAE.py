@@ -10,6 +10,8 @@ Created on Tue Feb 28 18:42:19 2023
 
 import numpy as np
 import openturns as ot
+import sys
+sys.path.append("../src/")
 from VAE_IS_VP import fitted_vae
 
 #%% Cross entropy with VAE
