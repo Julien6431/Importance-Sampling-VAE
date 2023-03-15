@@ -80,7 +80,7 @@ t = 0
 
 #%%
 
-input_dim = 20
+input_dim = 100
 input_distr = ot.Normal(input_dim)
 
 N=10**4

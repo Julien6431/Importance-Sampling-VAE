@@ -74,7 +74,6 @@ def CEIS_VAE(N,p,phi,t,distr,latent_dim=2,K=75):
     X = distr.getSample(N)
     samples = [X]
     Y = compute_output(X)
-    print(Y.shape)
     N_tot += N
     
     gamma_hat[0] = np.minimum(t,np.nanpercentile(Y,100*(1-p)))
@@ -99,18 +98,13 @@ def CEIS_VAE(N,p,phi,t,distr,latent_dim=2,K=75):
         
         #Computation of the new threshold
         gamma_hat[j] = np.minimum(t,np.nanpercentile(Y,100*(1-p)))
-        
-        print(gamma_hat[j])
-        
+                
         #Break the loop if the threshold is greater or equal to the real one
         if gamma_hat[j] >= t:
             break
         
         I = (Y>=gamma_hat[j])
         W = I*f_X/np.array(g_X)
-
-
-    print("\nExit loop")
 
     #Estimation of the failure probability  
     W_final = f_X/np.array(g_X)

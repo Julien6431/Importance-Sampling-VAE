@@ -98,6 +98,10 @@ for sample in samples:
 
 #%%
 
+input_dim = 100
+ot_function = ot.PythonFunction(input_dim,1,four_branchs)
+input_distr = ot.Normal(input_dim)
+
 n_rep = 10**2
 N = 10**4
 p = 0.2
@@ -107,8 +111,14 @@ proba_ceis_sg = np.zeros(n_rep)
 proba_ceis_gm = np.zeros(n_rep)
 
 for n in tqdm(range(n_rep)):
-    proba_vae_n,_,_ = CEIS_VAE(N,p,ot_function,t,input_distr,latent_dim=2,K=75)
-    proba_ceis_vae[n] = proba_vae_n
+    proba_vae,_,_ = CEIS_VAE(N,p,ot_function,t,input_distr,latent_dim=2,K=75)
+    proba_ceis_vae[n] = proba_vae
+    
+    proba_sg,_,_,_ = CEIS_SG(N,p,ot_function,t,input_distr)
+    proba_ceis_sg[n] = proba_sg
+    
+    proba_gm,_,_,_ = CEIS_GM(N,p,ot_function,t,input_distr,4)
+    proba_ceis_gm[n] = proba_gm
     
     
-np.savez(f"Data/four_branches_failprob_estimations_{input_dim}.npz")
+#np.savez(f"Data/four_branches_failprob_estimations_{input_dim}.npz")

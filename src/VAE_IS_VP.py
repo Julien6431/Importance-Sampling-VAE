@@ -11,6 +11,8 @@ Created on Sun Feb 26 12:04:51 2023
 
 import numpy as np
 import tensorflow as tf
+from silence_tensorflow import silence_tensorflow
+silence_tensorflow()
 from tensorflow import keras
 from tensorflow.keras import layers
 from AE_class import AutoEncoder
@@ -61,7 +63,7 @@ def fitted_vae(X,y,latent_dim,K,epochs=100,batch_size=100):
     
     vae = VAE(encoder, decoder, vp_layer, input_dim, latent_dim, K)
     vae.compile(optimizer=keras.optimizers.Adam())
-    vae.fit(tf.convert_to_tensor(X),tf.convert_to_tensor(y), epochs=epochs, batch_size=batch_size)#,verbose=0)
+    vae.fit(tf.convert_to_tensor(X),tf.convert_to_tensor(y), epochs=epochs, batch_size=batch_size,verbose=0)
     vae.set_ot_prior()    
     vae_encoder,vae_decoder = vae.get_encoder_decoder()
     return vae,vae_encoder,vae_decoder
