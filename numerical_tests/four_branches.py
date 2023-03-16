@@ -74,9 +74,9 @@ cnt = ax.contourf(X1, X2, values_function,levels=100)
 ax.contour(X1, X2, values_function, [t],colors='purple')
 ax.scatter(X_failure[:,0],X_failure[:,1],color='red',s=6)
 
-#%%
+#%% 2D execution of CE-VAE
 
-input_dim = 100
+input_dim = 2
 ot_function = ot.PythonFunction(input_dim,1,four_branchs)
 input_distr = ot.Normal(input_dim)
 
@@ -84,11 +84,9 @@ N=10**4
 p=0.25
 
 proba, samples, N_tot = CEIS_VAE(N,p,ot_function,t,input_distr,latent_dim=2,K=75)
-#proba, samples,_,N_tot = CEIS_GM(N,p,ot_function,t,input_distr,4)
 
 print(f"Estimated failure probability : {proba}")
 
-#%%
 
 fig, ax = plt.subplots(figsize=(15,15))
 ax.contour(X1, X2, values_function, [t], colors="r", linewidths=3)
@@ -98,7 +96,7 @@ for sample in samples:
 #fig.savefig("Figures/four_branches_ce_samples_dim2.png",bbox_inches='tight')
 
 
-#%%
+#%% Multiple runs
 
 input_dim = 100
 ot_function = ot.PythonFunction(input_dim,1,four_branchs)
@@ -111,16 +109,20 @@ p = 0.2
 proba_ceis_vae = np.zeros(n_rep)
 proba_ceis_sg = np.zeros(n_rep)
 proba_ceis_gm = np.zeros(n_rep)
+N_tots = np.zeros((n_rep,3))
 
 for n in tqdm(range(n_rep)):
-    proba_vae,_,_ = CEIS_VAE(N,p,ot_function,t,input_distr,latent_dim=2,K=75)
+    proba_vae,_,n_tot = CEIS_VAE(N,p,ot_function,t,input_distr,latent_dim=2,K=75)
     proba_ceis_vae[n] = proba_vae
+    N_tots[n,0] = n_tot
     
-    proba_sg,_,_,_ = CEIS_SG(N,p,ot_function,t,input_distr)
+    proba_sg,_,_,n_tot = CEIS_SG(N,p,ot_function,t,input_distr)
     proba_ceis_sg[n] = proba_sg
+    N_tots[n,1] = n_tot
     
-    proba_gm,_,_,_ = CEIS_GM(N,p,ot_function,t,input_distr,4)
+    proba_gm,_,_,n_tot = CEIS_GM(N,p,ot_function,t,input_distr,4)
     proba_ceis_gm[n] = proba_gm
+    N_tots[n,2] = n_tot
     
     
 #np.savez(f"Data/four_branches_failprob_estimations_{input_dim}.npz")
