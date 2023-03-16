@@ -89,7 +89,3 @@ p=0.25
 proba, samples, N_tot = CEIS_VAE(N,p,phi,t,input_distr,latent_dim=2,K=75)
 
 print(f"Estimated failure probability : {proba}")
-
-
-
-

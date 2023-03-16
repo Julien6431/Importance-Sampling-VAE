@@ -88,8 +88,8 @@ class VAE(keras.Model):
         pseudo_inputs = self.get_pseudo_inputs()
 
         z_mean, z_log_var, z = self.encoder(pseudo_inputs)
-        z_mean = np.array(z_mean)
-        z_var = np.exp(np.array(z_log_var))
+        z_mean = np.array(z_mean).astype("float64")
+        z_var = np.exp(np.array(z_log_var).astype("float64"))
                         
         distrs = []
         for i in range(self.K):
@@ -154,7 +154,7 @@ class VAE(keras.Model):
                 
         z_sample = self.prior.getSample(N)
         X_mean, X_log_var = self.decoder(tf.convert_to_tensor(z_sample))
-        X_mean,X_log_var = ot.Sample(np.array(X_mean)),np.array(X_log_var)
+        X_mean,X_log_var = ot.Sample(np.array(X_mean).astype("float64")),np.array(X_log_var).astype("float64")
     
         std_matrix = np.sqrt(np.exp(X_log_var))
     
@@ -166,7 +166,6 @@ class VAE(keras.Model):
             g_X = np.zeros((N,1))
             log_det = 0.5*np.sum(X_log_var,axis=1)
             inv_det = 1/np.exp(log_det)
-            #inv_det = 1/np.prod(std_matrix,axis=1)
             
             for i in range(N):
                 point = (new_sample_np[i] - X_mean)/std_matrix

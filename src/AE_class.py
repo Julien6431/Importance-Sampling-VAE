@@ -7,6 +7,7 @@ Created on Thu Dec  8 14:08:10 2022
 
 #%% Modules
 
+import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -16,8 +17,8 @@ from tensorflow.keras import layers
 def create_encoder(input_dim,latent_dim):
     
     encoder_inputs = keras.Input(shape=(input_dim,))
-    x = layers.Dense(32, activation="linear")(encoder_inputs)
-    x = layers.Dense(16, activation="linear")(x)
+    x = layers.Dense(32, activation="relu")(encoder_inputs)
+    x = layers.Dense(16, activation="relu")(x)
     z = layers.Dense(latent_dim, activation="linear")(x)
     z_log_var = layers.Dense(latent_dim, activation="linear")(x)
     encoder = keras.Model(encoder_inputs, [z,z_log_var], name="encoder")
@@ -25,11 +26,15 @@ def create_encoder(input_dim,latent_dim):
 
 def create_decoder(input_dim,latent_dim):
     
+    threshold = -100
+    a = 2*threshold/input_dim
+    
     latent_inputs = keras.Input(shape=(latent_dim,))
-    x = layers.Dense(16, activation="linear")(latent_inputs)
-    x = layers.Dense(32, activation="linear")(x)
+    x = layers.Dense(16, activation="relu")(latent_inputs)
+    x = layers.Dense(32, activation="relu")(x)
     x_output = layers.Dense(input_dim, activation="linear")(x)
     x_log_var = layers.Dense(input_dim, activation="linear")(x)
+    #x_log_var = tf.math.maximum(x_log_var, a)
     decoder = keras.Model(latent_inputs, [x_output,x_log_var], name="decoder")
     return decoder
 
