@@ -18,7 +18,7 @@ from VAE_IS_VP import fitted_vae
 
 #%% Setting
 
-input_dim = 10
+input_dim = 100
 latent_dim = 2
 K = 75
 N = 10**4
@@ -36,14 +36,12 @@ vae,vae_encoder,vae_decoder = fitted_vae(X,y,latent_dim,K,epochs=100)
 fig,ax = plt.subplots(figsize=(12,9))
 cm = plt.cm.get_cmap('cool')
 
-dim = 1
-
 pseudo_inputs = vae.get_pseudo_inputs()
 _, _, z = vae_encoder(pseudo_inputs)
 Z_mean,Z_log_var,Z = vae_encoder(X)
-im = ax.scatter(np.array(Z)[:,0],np.array(Z)[:,dim],c=y,s=1,cmap=cm)
+im = ax.scatter(np.array(Z)[:,0],np.array(Z)[:,1],c=y,s=1,cmap=cm)
 fig.colorbar(im, ax=ax)
-ax.scatter(np.array(z)[:,0],np.array(z)[:,dim],color='black',s=20)
+ax.scatter(np.array(z)[:,0],np.array(z)[:,1],color='black',s=20)
 
 fig.savefig(f"Figures/truncated_gaussian_latent_space_{input_dim}_{latent_dim}_{K}.png",bbox_inches='tight')
 
@@ -57,7 +55,8 @@ xx = np.linspace(-7,7,101).reshape((-1,1))
 yy = failure_distr.computePDF(xx)
 yyze = ot.Normal(1).computePDF(xx)
 
-new_X = vae.getSample(10**4,with_pdf=False)
+#new_X,g_X = vae.getSample(10**4,with_pdf=True)
+new_X = vae.getSample(10**5,with_pdf=False)
 
 fig,ax = plt.subplots(2,5,figsize=(15,6))
 for i in range(2):

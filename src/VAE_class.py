@@ -14,6 +14,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import tensorflow_probability as tfp
 tfd = tfp.distributions
+import time
 
 #%% Sampling procedure
 
@@ -53,10 +54,11 @@ class VAE(keras.Model):
         self.input_dim = input_dim
         self.latent_dim = latent_dim
         self.K = K
-        self.prior = ot.Normal(latent_dim)
         self.encoder = create_encoder(encoder,input_dim,latent_dim)
         self.decoder = create_decoder(decoder,input_dim,latent_dim)
         self.pseudo_inputs_layer = vp_layer
+        self.prior = ot.Normal(latent_dim)
+        self.distrX = ot.Normal(input_dim)
         self.total_loss_tracker = keras.metrics.Mean(name="total_loss")
         self.reconstruction_loss_tracker = keras.metrics.Mean(name="reconstruction_loss")
         self.kl_loss_tracker = keras.metrics.Mean(name="kl_loss")
@@ -82,24 +84,7 @@ class VAE(keras.Model):
             d_k = tfp.distributions.MultivariateNormalDiag(loc=mu,scale_diag=tf.sqrt(sigma))
             components.append(d_k)
         return tfd.Mixture(cat = cat,components = components)
-        
     
-    def set_ot_prior(self):
-        pseudo_inputs = self.get_pseudo_inputs()
-
-        z_mean, z_log_var, z = self.encoder(pseudo_inputs)
-        z_mean = np.array(z_mean).astype("float64")
-        z_var = np.exp(np.array(z_log_var).astype("float64"))
-                        
-        distrs = []
-        for i in range(self.K):
-            d  = ot.Normal(ot.Point(z_mean[i]),ot.CovarianceMatrix(np.diag(z_var[i])))
-            distrs.append(d)
-        prior = ot.Mixture(distrs)
-        self.prior = prior
-    
-    def get_pseudo_inputs(self):
-        return self.pseudo_inputs_layer(tf.eye(self.K))
 
     def train_step(self, data):
         X,y = data
@@ -149,29 +134,75 @@ class VAE(keras.Model):
             "kl_loss": self.kl_loss_tracker.result()
         }
     
+    def get_pseudo_inputs(self):
+        return self.pseudo_inputs_layer(tf.eye(self.K))
+    
+    def set_ot_prior(self):
+        pseudo_inputs = self.get_pseudo_inputs()
+
+        z_mean, z_log_var, z = self.encoder(pseudo_inputs)
+        z_mean = np.array(z_mean).astype("float64")
+        z_var = np.exp(np.array(z_log_var).astype("float64"))
+                        
+        distrs = []
+        for i in range(self.K):
+            d  = ot.Normal(ot.Point(z_mean[i]),ot.CovarianceMatrix(np.diag(z_var[i])))
+            distrs.append(d)
+        prior = ot.Mixture(distrs)
+        self.prior = prior
+        
+    def set_ot_distrX(self,M):
+        Z = self.prior.getSample(M)
+        X_mean, X_log_var = self.decoder(tf.convert_to_tensor(Z))
+        X_mean = ot.Sample(np.array(X_mean).astype("float64"))
+        X_log_var = np.array(X_log_var).astype("float64")
+        X_std = ot.Sample(np.sqrt(np.exp(X_log_var)))
+        
+        distrs = []
+        for i in range(M):
+            d = ot.Normal(X_mean[i],X_std[i])
+            distrs.append(d)
+        distrX = ot.Mixture(distrs)
+        self.distrX = distrX
     
     def getSample(self,N,with_pdf=False):
-                
-        z_sample = self.prior.getSample(N)
-        X_mean, X_log_var = self.decoder(tf.convert_to_tensor(z_sample))
-        X_mean,X_log_var = ot.Sample(np.array(X_mean).astype("float64")),np.array(X_log_var).astype("float64")
-    
-        std_matrix = np.sqrt(np.exp(X_log_var))
-    
-        Normal_vector = ot.Normal(self.input_dim).getSample(N)
-        new_sample = ot.Sample(std_matrix*Normal_vector) + X_mean
-        
-        if with_pdf==True:
-            new_sample_np = np.array(new_sample)
-            g_X = np.zeros((N,1))
-            log_det = 0.5*np.sum(X_log_var,axis=1)
-            inv_det = 1/np.exp(log_det)
-            
-            for i in range(N):
-                point = (new_sample_np[i] - X_mean)/std_matrix
-                pdf = np.array(ot.Normal(self.input_dim).computePDF(point)).flatten()
-                g_X[i] = np.mean(inv_det*pdf)
 
-            return new_sample, ot.Sample(g_X)
+        #start_time = time.time()
+        new_sample = self.distrX.getSample(N)
+        #print("Get sample time: %s seconds " % (time.time() - start_time))
+        if with_pdf==True:
+            #start_time = time.time()
+            g_X = self.distrX.computePDF(new_sample)
+            #print("Get PDF time: %s seconds " % (time.time() - start_time))
+            return new_sample,g_X
         else:
             return new_sample
+
+            
+    # def getSample(self,N,with_pdf=False):
+    #     z_sample = self.prior.getSample(N)
+    #     X_mean, X_log_var = self.decoder(tf.convert_to_tensor(z_sample))
+    #     X_mean,X_log_var = ot.Sample(np.array(X_mean).astype("float64")),np.array(X_log_var).astype("float64")
+    
+    #     std_matrix = np.sqrt(np.exp(X_log_var))
+    
+    #     Normal_vector = ot.Normal(self.input_dim).getSample(N)
+    #     new_sample = ot.Sample(std_matrix*Normal_vector) + X_mean
+        
+    #     if with_pdf==True:
+    #         start_time = time.time()
+    #         new_sample_np = np.array(new_sample)
+    #         g_X = np.zeros((N,1))
+    #         log_det = 0.5*np.sum(X_log_var,axis=1)
+    #         inv_det = 1/np.exp(log_det)
+            
+    #         for i in range(N):
+    #             point = (new_sample_np[i] - X_mean)/std_matrix
+    #             pdf = np.array(ot.Normal(self.input_dim).computePDF(ot.Sample(point))).flatten()
+    #             g_X[i] = np.mean(inv_det*pdf)
+       
+    #         print("Get PDF time: %s seconds " % (time.time() - start_time))
+    #
+    #         return new_sample, ot.Sample(g_X)
+    #     else:
+    #         return new_sample
