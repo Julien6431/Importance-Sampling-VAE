@@ -178,32 +178,3 @@ class VAE(keras.Model):
             return new_sample,g_X
         else:
             return new_sample
-
-            
-    # def getSample(self,N,with_pdf=False):
-    #     z_sample = self.prior.getSample(N)
-    #     X_mean, X_log_var = self.decoder(tf.convert_to_tensor(z_sample))
-    #     X_mean,X_log_var = ot.Sample(np.array(X_mean).astype("float64")),np.array(X_log_var).astype("float64")
-    
-    #     std_matrix = np.sqrt(np.exp(X_log_var))
-    
-    #     Normal_vector = ot.Normal(self.input_dim).getSample(N)
-    #     new_sample = ot.Sample(std_matrix*Normal_vector) + X_mean
-        
-    #     if with_pdf==True:
-    #         start_time = time.time()
-    #         new_sample_np = np.array(new_sample)
-    #         g_X = np.zeros((N,1))
-    #         log_det = 0.5*np.sum(X_log_var,axis=1)
-    #         inv_det = 1/np.exp(log_det)
-            
-    #         for i in range(N):
-    #             point = (new_sample_np[i] - X_mean)/std_matrix
-    #             pdf = np.array(ot.Normal(self.input_dim).computePDF(ot.Sample(point))).flatten()
-    #             g_X[i] = np.mean(inv_det*pdf)
-       
-    #         print("Get PDF time: %s seconds " % (time.time() - start_time))
-    #
-    #         return new_sample, ot.Sample(g_X)
-    #     else:
-    #         return new_sample

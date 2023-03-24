@@ -15,6 +15,7 @@ import sys
 sys.path.append("../cross_entropy/")
 from CE_vMFNM import CEIS_vMFNM
 from CE_VAE import CEIS_VAE
+from iCE_VAE import iCEIS_VAE
 
 ot.Log.Show(ot.Log.NONE)
 
@@ -74,6 +75,19 @@ ax.contour(X1, X2, values_function, [t],colors='purple')
 ax.scatter(X_failure[:,0],X_failure[:,1],color='red',s=6)
 
 
+#%% iCE-VAE
+
+input_dim = 2
+ot_function = ot.PythonFunction(input_dim,1,four_branchs)
+input_distr = ot.Normal(input_dim)
+
+N=2000
+
+proba, samples, N_tot = iCEIS_VAE(N, ot_function, 5, input_distr, 2, latent_dim=2, K=75)
+
+print(f"Estimated failure probability : {proba}")
+
+
 # #%% CE-vMFNM
 
 # input_dim = 100
@@ -98,14 +112,14 @@ ax.scatter(X_failure[:,0],X_failure[:,1],color='red',s=6)
 
 #%% 2D execution of CE-VAE
 
-input_dim = 2
+input_dim = 100
 ot_function = ot.PythonFunction(input_dim,1,four_branchs)
 input_distr = ot.Normal(input_dim)
 
 N=10**4
 p=0.25
 
-proba, samples, N_tot = CEIS_VAE(N,p,ot_function,t,input_distr,latent_dim=2,K=75)
+proba, samples, N_tot = CEIS_VAE(N,p,ot_function,5,input_distr,latent_dim=2,K=75)
 
 print(f"Estimated failure probability : {proba}")
 
