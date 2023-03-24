@@ -86,7 +86,7 @@ def CEIS_VAE(N,p,phi,t,distr,latent_dim=2,K=75):
         
     #Adaptive algorithm
     for j in range(1,max_it):
-        
+                
         vae,_,_ = fitted_vae(np.array(X).astype("float32"),W.astype("float32"),latent_dim,K,epochs=100,batch_size=100)
         
         X,g_X = vae.getSample(N,with_pdf=True)
@@ -99,6 +99,7 @@ def CEIS_VAE(N,p,phi,t,distr,latent_dim=2,K=75):
         #Computation of the new threshold
         gamma_hat[j] = np.minimum(t,np.nanpercentile(Y,100*(1-p)))
                 
+        print(gamma_hat[j])
         #Break the loop if the threshold is greater or equal to the real one
         if gamma_hat[j] >= t:
             break

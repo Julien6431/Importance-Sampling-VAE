@@ -38,7 +38,7 @@ def initial_vp_layer(K,X,y):
     idx = np.random.choice(range(N),replace=False,size=K,p=prob.flatten())
     target_points = tf.convert_to_tensor(X[idx])
     dense_layer.compile(optimizer=keras.optimizers.Adam(),loss='mse')
-    dense_layer.fit(id_matrix,target_points, epochs=100, batch_size=K,verbose=0)
+    dense_layer.fit(id_matrix,target_points, epochs=1000, batch_size=K,verbose=0)
     return dense_layer
 
 #%% Initial autoencoder
@@ -54,16 +54,25 @@ def fitted_ae(X,y,latent_dim,epochs,batch_size):
 #%% Fitted VAE
 
 def fitted_vae(X,y,latent_dim,K,epochs=100,batch_size=100):
+    
+    mean_x = np.mean(X,axis=0)
+    std_x = np.std(X,axis=0)
+    
+    X_normed = (X-mean_x)/std_x
+    
+    max_y = np.max(y)
+    y_normed = y/max_y
+    
     input_dim = X.shape[1]
     
-    vp_layer = initial_vp_layer(K,X,y)
+    vp_layer = initial_vp_layer(K,X_normed,y_normed)
     
-    auto_encoder = fitted_ae(X,y,latent_dim,epochs=epochs,batch_size=batch_size)
+    auto_encoder = fitted_ae(X_normed,y_normed,latent_dim,epochs=epochs,batch_size=batch_size)
     encoder,decoder = auto_encoder.get_encoder_decoder()
     
-    vae = VAE(encoder, decoder, vp_layer, input_dim, latent_dim, K)
+    vae = VAE(encoder, decoder, vp_layer, input_dim, latent_dim, K,mean_x,std_x)
     vae.compile(optimizer=keras.optimizers.Adam())
-    vae.fit(tf.convert_to_tensor(X),tf.convert_to_tensor(y), epochs=epochs, batch_size=batch_size,verbose=0)
+    vae.fit(tf.convert_to_tensor(X_normed),tf.convert_to_tensor(y_normed), epochs=epochs, batch_size=batch_size,verbose=0)
     vae.set_ot_prior()  
     vae.set_ot_distrX(M=10**3)
     vae_encoder,vae_decoder = vae.get_encoder_decoder()

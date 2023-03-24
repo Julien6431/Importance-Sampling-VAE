@@ -18,7 +18,7 @@ from VAE_IS_VP import fitted_vae
 
 #%% Setting
 
-input_dim = 100
+input_dim = 10
 latent_dim = 2
 K = 75
 N = 10**4
@@ -33,12 +33,17 @@ vae,vae_encoder,vae_decoder = fitted_vae(X,y,latent_dim,K,epochs=100)
 
 #%% Plot latent space
 
+mean_x = vae.mean_x
+std_x = vae.std_x
+
+X_normed = (X-mean_x)/std_x
+
 fig,ax = plt.subplots(figsize=(12,9))
 cm = plt.cm.get_cmap('cool')
 
 pseudo_inputs = vae.get_pseudo_inputs()
 _, _, z = vae_encoder(pseudo_inputs)
-Z_mean,Z_log_var,Z = vae_encoder(X)
+Z_mean,Z_log_var,Z = vae_encoder(X_normed)
 im = ax.scatter(np.array(Z)[:,0],np.array(Z)[:,1],c=y,s=1,cmap=cm)
 fig.colorbar(im, ax=ax)
 ax.scatter(np.array(z)[:,0],np.array(z)[:,1],color='black',s=20)
@@ -54,6 +59,8 @@ failure_distr = ot.Mixture([distr1,distr2])
 xx = np.linspace(-7,7,101).reshape((-1,1))
 yy = failure_distr.computePDF(xx)
 yyze = ot.Normal(1).computePDF(xx)
+
+full = ot.ComposedDistribution([failure_distr] + (input_dim-1)*[ot.Normal(1)])
 
 #new_X,g_X = vae.getSample(10**4,with_pdf=True)
 new_X = vae.getSample(10**5,with_pdf=False)

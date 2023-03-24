@@ -14,7 +14,6 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import tensorflow_probability as tfp
 tfd = tfp.distributions
-import time
 
 #%% Sampling procedure
 
@@ -49,7 +48,7 @@ def create_decoder(decoder,input_dim,latent_dim):
 #%% VAE class
 
 class VAE(keras.Model):
-    def __init__(self, encoder, decoder, vp_layer, input_dim, latent_dim, K, **kwargs):
+    def __init__(self, encoder, decoder, vp_layer, input_dim, latent_dim, K, mean_x,std_x, **kwargs):
         super(VAE, self).__init__(**kwargs)
         self.input_dim = input_dim
         self.latent_dim = latent_dim
@@ -62,6 +61,9 @@ class VAE(keras.Model):
         self.total_loss_tracker = keras.metrics.Mean(name="total_loss")
         self.reconstruction_loss_tracker = keras.metrics.Mean(name="reconstruction_loss")
         self.kl_loss_tracker = keras.metrics.Mean(name="kl_loss")
+        
+        self.mean_x = mean_x
+        self.std_x = std_x
 
     @property
     def metrics(self):
@@ -141,12 +143,13 @@ class VAE(keras.Model):
         pseudo_inputs = self.get_pseudo_inputs()
 
         z_mean, z_log_var, z = self.encoder(pseudo_inputs)
-        z_mean = np.array(z_mean).astype("float64")
+        z_mean = ot.Sample(np.array(z_mean).astype("float64"))
         z_var = np.exp(np.array(z_log_var).astype("float64"))
-                        
+        z_std = ot.Sample(np.sqrt(z_var))        
+        
         distrs = []
         for i in range(self.K):
-            d  = ot.Normal(ot.Point(z_mean[i]),ot.CovarianceMatrix(np.diag(z_var[i])))
+            d  = ot.Normal(z_mean[i],z_std[i])
             distrs.append(d)
         prior = ot.Mixture(distrs)
         self.prior = prior
@@ -165,15 +168,13 @@ class VAE(keras.Model):
         distrX = ot.Mixture(distrs)
         self.distrX = distrX
     
+    
     def getSample(self,N,with_pdf=False):
-
-        #start_time = time.time()
-        new_sample = self.distrX.getSample(N)
-        #print("Get sample time: %s seconds " % (time.time() - start_time))
+        new_sample_std = np.array(self.distrX.getSample(N))
+        new_sample = ot.Sample(self.mean_x + self.std_x*new_sample_std)
         if with_pdf==True:
-            #start_time = time.time()
-            g_X = self.distrX.computePDF(new_sample)
-            #print("Get PDF time: %s seconds " % (time.time() - start_time))
+            det = np.prod(self.std_x)
+            g_X = self.distrX.computePDF(new_sample_std)/det
             return new_sample,g_X
         else:
             return new_sample

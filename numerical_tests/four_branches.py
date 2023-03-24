@@ -13,8 +13,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import sys
 sys.path.append("../cross_entropy/")
-from CE_SG import CEIS_SG
-from CE_GM import CEIS_GM
+from CE_vMFNM import CEIS_vMFNM
 from CE_VAE import CEIS_VAE
 
 ot.Log.Show(ot.Log.NONE)
@@ -74,6 +73,29 @@ cnt = ax.contourf(X1, X2, values_function,levels=100)
 ax.contour(X1, X2, values_function, [t],colors='purple')
 ax.scatter(X_failure[:,0],X_failure[:,1],color='red',s=6)
 
+
+# #%% CE-vMFNM
+
+# input_dim = 100
+# ot_function = ot.PythonFunction(input_dim,1,four_branchs)
+# input_distr = ot.Normal(input_dim)
+
+# N=10**4
+# p=0.25
+
+# Pr, lv, N_tot, gamma_hat, samples, k_fin = CEIS_vMFNM(N, p, ot_function, 5, input_distr, 4)
+# print(N_tot)
+
+# print(f"Estimated failure probability : {Pr}")
+
+# #%%
+
+# fig, ax = plt.subplots(figsize=(15,15))
+# ax.contour(X1, X2, values_function, [5], colors="r", linewidths=3)
+# for sample in samples:
+#     ax.plot(*np.array(sample).T, ".", markersize=4)
+
+
 #%% 2D execution of CE-VAE
 
 input_dim = 2
@@ -87,13 +109,14 @@ proba, samples, N_tot = CEIS_VAE(N,p,ot_function,t,input_distr,latent_dim=2,K=75
 
 print(f"Estimated failure probability : {proba}")
 
+#%%
 
 fig, ax = plt.subplots(figsize=(15,15))
 ax.contour(X1, X2, values_function, [t], colors="r", linewidths=3)
 for sample in samples:
     ax.plot(*np.array(sample).T, ".", markersize=4)
     
-#fig.savefig("Figures/four_branches_ce_samples_dim2.png",bbox_inches='tight')
+fig.savefig("Figures/four_branches_ce_samples_dim2.png",bbox_inches='tight')
 
 
 #%% Multiple runs
@@ -102,7 +125,7 @@ input_dim = 100
 ot_function = ot.PythonFunction(input_dim,1,four_branchs)
 input_distr = ot.Normal(input_dim)
 
-n_rep = 10**1
+n_rep = 10**2
 N = 10**4
 p = 0.2
 

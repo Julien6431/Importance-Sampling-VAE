@@ -14,22 +14,18 @@ from tensorflow.keras import layers
 #%% Encoder/Decoder architecture
     
 def create_encoder(input_dim,latent_dim):
-    
-    threshold = 700
-    
+        
     encoder_inputs = keras.Input(shape=(input_dim,))
     x = layers.Dense(32, activation="relu")(encoder_inputs)
     x = layers.Dense(16, activation="relu")(x)
     z = layers.Dense(latent_dim, activation="linear")(x)
     z_log_var = layers.Dense(latent_dim, activation="linear")(x)
-    z_log_var = tf.math.minimum(z_log_var, threshold)
     encoder = keras.Model(encoder_inputs, [z,z_log_var], name="encoder")
     return encoder
 
 def create_decoder(input_dim,latent_dim):
     
     threshold = -300
-    #a = 2*threshold/input_dim
     
     latent_inputs = keras.Input(shape=(latent_dim,))
     x = layers.Dense(16, activation="relu")(latent_inputs)
@@ -66,11 +62,12 @@ class AutoEncoder(keras.Model):
     
         with tf.GradientTape() as tape:
             
-            z,_ = self.encoder(X)
+            z,z_log_var = self.encoder(X)
             reconstruction,_ = self.decoder(z)
             
             xx = tf.pow(X - reconstruction,2)
-            total_loss = tf.reduce_mean(tf.multiply(tf.reduce_mean(xx,axis=1),y))
+            zz = tf.pow(z_log_var,2)
+            total_loss = tf.reduce_mean(tf.multiply(tf.reduce_mean(xx,axis=1),y)) + tf.reduce_mean(tf.multiply(tf.reduce_mean(zz,axis=1),y))
             
             
         grads = tape.gradient(total_loss, self.trainable_weights)
