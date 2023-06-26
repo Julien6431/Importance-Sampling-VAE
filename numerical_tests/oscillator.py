@@ -14,11 +14,14 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import sys
 sys.path.append("../cross_entropy/")
+from CE_vMFNM import CEIS_vMFNM
 from CE_VAE import CEIS_VAE
+from iCE_VAE import iCEIS_VAE
+from iCE_vMFNM import iCE_vMFNM
 
 #%% Settings
 
-input_dim = 100
+input_dim = 200
 input_distr = ot.Normal(input_dim)
 
 z_0=0
@@ -78,14 +81,132 @@ t = 0
 #lorsque d>=100, la proba phi > 0 est à 4.28e-04
 
 
+#%% iCE-VAE
+
+input_dim = 200
+input_distr = ot.Normal(input_dim)
+
+N=10**4
+
+#proba, samples, N_tot = iCEIS_VAE(5*10**3, phi, t, input_distr, 2, latent_dim=2, K=75)
+proba, samples, N_tot = CEIS_VAE(N,.15, phi, t, input_distr,latent_dim=2, K=75)
+print(f"Estimated failure probability is {proba} with {N_tot} calls to phi.")
+
+#%% iCE-vMFNM
+
+input_dim = 200
+input_distr = ot.Normal(input_dim)
+
+N=10**4
+#proba, lv, N_tot, samples_v, k_fin = iCE_vMFNM(5*10**3, phi, t, input_distr,2,2)
+proba, lv, N_tot, samples_v, k_fin = CEIS_vMFNM(N,.15, phi, t, input_distr,2)
+
+print(f"Estimated failure probability is {proba} with {N_tot} calls to phi.")
+
+
 #%%
 
-input_dim = 100
+input_dim = 200
 input_distr = ot.Normal(input_dim)
 
 N=10**4
 p=0.25
 
-proba, samples, N_tot = CEIS_VAE(N,p,phi,t,input_distr,latent_dim=2,K=75)
+#proba, samples, N_tot = CEIS_VAE(N,p,phi,t,input_distr,latent_dim=2,K=75)
+proba, samples, N_tot = iCEIS_VAE(5*10**3, phi, t, input_distr, 2, latent_dim=2, K=75)
 
-print(f"Estimated failure probability : {proba}")
+print(f"Estimated failure probability is {proba} with {N_tot} calls to phi.")
+
+#%% Multiple runs
+
+input_dim = 200
+input_distr = ot.Normal(input_dim)
+
+n_rep = 20#10**2
+N_ce = 10**4
+N_ice = 5*10**3
+delta_cv = 2
+p = 0.15
+
+proba_ceis_vae = np.zeros(n_rep)
+proba_ceis_vM = np.zeros(n_rep)
+proba_iceis_vae = np.zeros(n_rep)
+proba_iceis_vM = np.zeros(n_rep)
+N_tots = np.zeros((n_rep,4))
+
+for n in tqdm(range(n_rep)):
+    proba_vae,_,n_tot = CEIS_VAE(N_ce,p,phi,t,input_distr,latent_dim=2,K=75)
+    proba_ceis_vae[n] = proba_vae
+    N_tots[n,0] = n_tot
+    
+    proba_vM,_,n_tot,_,_ = CEIS_vMFNM(N_ce,p,phi,t,input_distr,2)
+    proba_ceis_vM[n] = proba_vM
+    N_tots[n,1] = n_tot
+    
+    # proba_vae,_,n_tot = iCEIS_VAE(N_ice, phi, t, input_distr, delta_cv, latent_dim=2, K=75)
+    # proba_iceis_vae[n] = proba_vae
+    # N_tots[n,2] = n_tot
+    
+    # proba_vM,_,n_tot,_,_ = iCE_vMFNM(N_ice, phi, t, input_distr, delta_cv, 2)
+    # proba_iceis_vM[n] = proba_vM
+    # N_tots[n,3] = n_tot
+    
+    
+#%%
+
+
+input_dim = 200
+input_distr = ot.Normal(input_dim)
+
+n_rep = 10**2
+N_ce = 10**4
+N_ice = 5*10**3
+delta_cv = 2
+p = 0.15
+
+proba_ceis_vae = np.zeros(n_rep)
+proba_ceis_vM_2 = np.zeros(n_rep)
+proba_ceis_vM_1 = np.zeros(n_rep)
+proba_ceis_vM_3 = np.zeros(n_rep)
+# proba_iceis_vae = np.zeros(n_rep)
+# proba_iceis_vM = np.zeros(n_rep)
+N_tots = np.zeros((n_rep,4))
+
+#%%
+
+n_start = 0
+
+for n in tqdm(range(n_start,n_rep)):
+    proba_vae,_,n_tot = CEIS_VAE(N_ce,p,phi,t,input_distr,latent_dim=2,K=75)
+    proba_ceis_vae[n] = proba_vae
+    N_tots[n,0] = n_tot
+    
+    # proba_vM,_,n_tot,_,_ = CEIS_vMFNM(N_ce,p,phi,t,input_distr,2)
+    # proba_ceis_vM_2[n] = proba_vM
+    # N_tots[n,1] = n_tot
+    
+    # proba_vM,_,n_tot,_,_ = CEIS_vMFNM(N_ce,p,phi,t,input_distr,1)
+    # proba_ceis_vM_1[n] = proba_vM
+    # N_tots[n,2] = n_tot
+    
+    # proba_vM,_,n_tot,_,_ = CEIS_vMFNM(N_ce,p,phi,t,input_distr,3)
+    # proba_ceis_vM_3[n] = proba_vM
+    # N_tots[n,3] = n_tot
+    
+    # proba_vae,_,n_tot = iCEIS_VAE(N_ice, phi, t, input_distr, delta_cv, latent_dim=2, K=75)
+    # proba_iceis_vae[n] = proba_vae
+    # N_tots[n,2] = n_tot
+    
+    # proba_vM,_,n_tot,_,_ = iCE_vMFNM(N_ice, phi, t, input_distr, delta_cv, 2)
+    # proba_iceis_vM[n] = proba_vM
+    # N_tots[n,3] = n_tot
+
+
+#%%
+
+np.savez(f"Data/oscillator_failprob_estimations_{input_dim}.npz",
+         CE_vae=proba_ceis_vae,
+         CE_vM2=proba_ceis_vM_2,
+         CE_vM1=proba_ceis_vM_1,
+         CE_vM3=proba_ceis_vM_3,
+         N_tots=N_tots)
