@@ -71,7 +71,7 @@ def iCEIS_VAE(N, phi, t, distr, CV_target, latent_dim=2, K=75):
     
     # Initialization of variables and storage
     N_tot = 0  # total number of samples
-    max_it = 50
+    max_it = 20
     sigma_t = np.zeros(max_it)
 
 
@@ -84,17 +84,21 @@ def iCEIS_VAE(N, phi, t, distr, CV_target, latent_dim=2, K=75):
     X = distr.getSample(N)
     samples = [X]
     Y = compute_output(X)
+    N_tot += N
     
-    sigma_t[0] = 10 * np.mean(Y)
+    sigma_t[0] = np.abs(10 * np.mean(Y))
     I = (Y>=t)
     
-    W_approx = np.divide(I, approx_normCDF((Y.flatten()-t) / sigma_t[0]))
+    cdf = compute_CDF((Y.flatten()-t) / sigma_t[0])
+    
+    #W_approx = np.divide(I, approx_normCDF((Y.flatten()-t) / sigma_t[0]))
+    W_approx = np.divide(I, cdf.reshape((-1,1)))
     if np.sum(W_approx)>0:
         Cov_x = np.std(W_approx) / np.mean(W_approx)
         if Cov_x <= CV_target:
             return np.mean(I), N_tot, samples
     
-    W_t = approx_normCDF((Y.flatten()-t) / sigma_t[0]).reshape((-1,1))
+    W_t = cdf.reshape((-1,1))
 
     # Function reference
     minimize = spo.fminbound
@@ -104,17 +108,26 @@ def iCEIS_VAE(N, phi, t, distr, CV_target, latent_dim=2, K=75):
         
         vae,_,_ = fitted_vae(np.array(X).astype("float32"),W_t.astype("float32"),latent_dim,K,epochs=100,batch_size=100)
         
-        X,g_X = vae.getSample(N,with_pdf=True)
+        X,log_gx = vae.getSample(N,with_pdf=True)
+        log_fx = distr.computeLogPDF(X)
+        log_W = log_fx - log_gx
+        W = np.exp(log_W)
         samples.append(X)
-        f_X = np.array(distr.computePDF(X))
+        #f_X = np.array(distr.computePDF(X))
     
-        W = f_X/np.array(g_X)
+        #W = f_X/np.array(g_X)
     
         Y = compute_output(X)
         N_tot += N
         I = (Y >= t)
+                
+        #print(approx_normCDF((Y.flatten()-t) / sigma_t[j-1]))
         
-        W_approx = np.divide(I, approx_normCDF((Y.flatten()-t) / sigma_t[j-1]).reshape((-1,1)))
+        cdf = compute_CDF((Y.flatten()-t) / sigma_t[j-1])
+        #print(np.min(cdf),np.min(approx_normCDF((Y.flatten()-t) / sigma_t[j-1])))
+        
+        #W_approx = np.divide(I, approx_normCDF((Y.flatten()-t) / sigma_t[j-1]).reshape((-1,1)))
+        W_approx = np.divide(I, cdf.reshape((-1,1)))
         if np.sum(W_approx)>0:
             Cov_x = np.std(W_approx) / np.mean(W_approx)
             print(Cov_x)
@@ -123,21 +136,35 @@ def iCEIS_VAE(N, phi, t, distr, CV_target, latent_dim=2, K=75):
         
         # compute sigma and weights for distribution fitting
         # minimize COV of W_t (W_t=approx_normCDF*W)
+        # fmin = lambda x: abs(
+        #     np.std(np.multiply(approx_normCDF((Y.flatten()-t) / x).reshape((-1,1)), W))
+        #     / np.mean(np.multiply(approx_normCDF((Y.flatten()-t) / x).reshape((-1,1)), W))
+        #     - CV_target
+        # )
         fmin = lambda x: abs(
-            np.std(np.multiply(approx_normCDF((Y.flatten()-t) / x).reshape((-1,1)), W))
-            / np.mean(np.multiply(approx_normCDF((Y.flatten()-t) / x).reshape((-1,1)), W))
+            np.std(np.multiply(compute_CDF((Y.flatten()-t) / x).reshape((-1,1)), W))
+            / np.mean(np.multiply(compute_CDF((Y.flatten()-t) / x).reshape((-1,1)), W))
             - CV_target
         )
         sigma_new = minimize(fmin, 0, sigma_t[j-1])
+        #print(sigma_new)
         sigma_t[j] = sigma_new
 
         # update W_t
-        W_t = np.multiply(approx_normCDF((Y.flatten()-t) / sigma_new).reshape((-1,1)), W)
+        #W_t = np.multiply(approx_normCDF((Y.flatten()-t) / sigma_new).reshape((-1,1)), W)
+        W_t = np.multiply(compute_CDF((Y.flatten()-t) / sigma_new).reshape((-1,1)), W)
 
     # Calculation of the Probability of failure
     Pr = 1 / N * sum(W[I])
 
     return Pr, samples, N_tot
+
+
+def compute_CDF(xx):
+    
+    d = ot.Normal(1)
+    yy = d.computeCDF(xx.reshape((-1,1)))
+    return np.array(yy)
 
 
 def approx_normCDF(x):

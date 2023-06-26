@@ -7,8 +7,8 @@ Created on Wed Mar 22 16:49:17 2023
 
 import numpy as np
 import scipy as sp
-from ERANataf import ERANataf
-from ERADist import ERADist
+import openturns as ot
+import scipy.stats as ss
 from EMvMFNM import EMvMFNM
 np.seterr(all='ignore')
 
@@ -70,17 +70,13 @@ Based on:
 """
 
 
-def iCE_vMFNM(N, p, phi, t, distr, CV_target, k_init):
-    if (N * p != np.fix(N * p)) or (1 / p != np.fix(1 / p)):
-        raise RuntimeError(
-            "N*p and 1/p must be positive integers. Adjust N and p accordingly"
-        )
+def iCE_vMFNM(N, phi, t, distr, CV_target, k_init):
     
     dim = distr.getDimension()
 
     # Initialization of variables and storage
     N_tot = 0  # total number of samples
-    max_it = 50
+    max_it = 20
     samples = []  # space for the samples in the standard space
 
     # CE procedure
@@ -103,6 +99,13 @@ def iCE_vMFNM(N, p, phi, t, distr, CV_target, k_init):
     Pi_hat = Pi_init
     k = k_init
 
+
+    if type(phi)==ot.func.Function:
+        compute_output = lambda x : np.array(phi(x)).flatten()
+    else:
+        compute_output = lambda x : phi(np.array(x))
+
+
     # Function reference
     #normalCDF = sp.stats.norm.cdf
     minimize = sp.optimize.fminbound
@@ -123,11 +126,12 @@ def iCE_vMFNM(N, p, phi, t, distr, CV_target, k_init):
         N_tot += N
 
         # Evaluation of the limit state function
-        Y = np.array(phi(X)).flatten()
+        Y = compute_output(X)
+        #Y = np.array(phi(X)).flatten()
 
         # initialize sigma_0
         if j == 0:
-            sigma_t[j] = 10 * np.mean(Y)
+            sigma_t[j] = np.abs(10 * np.mean(Y))
         else:
             sigma_t[j] = sigma_new
 
@@ -140,7 +144,7 @@ def iCE_vMFNM(N, p, phi, t, distr, CV_target, k_init):
 
         # check convergence
         # transitional weight W_t=I*W when sigma_t approches 0 (smooth approximation:)
-        W_approx = np.divide(I, approx_normCDF(-Y / sigma_t[j]))  # weight of indicator approximations
+        W_approx = np.divide(I, approx_normCDF((Y-t) / sigma_t[j]))  # weight of indicator approximations
 
         # import timeit
         # timeit.timeit('approx_normCDF(-geval / sigma_t[j])', globals=globals(), number=100)
@@ -154,14 +158,15 @@ def iCE_vMFNM(N, p, phi, t, distr, CV_target, k_init):
         # compute sigma and weights for distribution fitting
         # minimize COV of W_t (W_t=approx_normCDF*W)
         fmin = lambda x: abs(
-            np.std(np.multiply(approx_normCDF(-Y / x), W))
-            / np.mean(np.multiply(approx_normCDF(-Y / x), W))
+            np.std(np.multiply(approx_normCDF((Y-t) / x), W))
+            / np.mean(np.multiply(approx_normCDF((Y-t) / x), W))
             - CV_target
         )
         sigma_new = minimize(fmin, 0, sigma_t[j])
+        #print(sigma_new)
 
         # update W_t
-        W_t = np.multiply(approx_normCDF(-Y / sigma_new), W)[:, None]
+        W_t = np.multiply(approx_normCDF((Y-t) / sigma_new), W)[:, None]
 
         # normalize weights
         W_t = W_t / np.sum(W_t)
@@ -199,7 +204,7 @@ def iCE_vMFNM(N, p, phi, t, distr, CV_target, k_init):
 # --------------------------------------------------------------------------
 def hs_sample(N, n, R):
 
-    Y = sp.stats.norm.rvs(size=(n, N))  # randn(n,N)
+    Y = ss.norm.rvs(size=(n, N))  # randn(n,N)
     Y = Y.T
     norm = np.tile(np.sqrt(np.sum(Y ** 2, axis=1)), [1, n])
     X = Y / norm * R  # X = np.matmul(Y/norm,R)
@@ -218,7 +223,7 @@ def vMFNM_sample(mu, kappa, omega, m, alpha, N):
         # sampling the radius
         #     pd=makedist('Nakagami','mu',m,'omega',omega)
         #     R=pd.random(N,1)
-        R = np.sqrt(sp.stats.gamma.rvs(a=m, scale=omega / m, size=[N, 1]))
+        R = np.sqrt(ss.gamma.rvs(a=m, scale=omega / m, size=[N, 1]))
 
         # sampling on unit hypersphere
         X_norm = vsamp(mu.T, kappa, N)
@@ -237,7 +242,7 @@ def vMFNM_sample(mu, kappa, omega, m, alpha, N):
         for p in range(k):
             # sampling the radius
             R[R_last : R_last + z[p], :] = np.sqrt(
-                sp.stats.gamma.rvs(
+                ss.gamma.rvs(
                     a=m[:, p], scale=omega[:, p] / m[:, p], size=[z[p], 1]
                 )
             )
@@ -274,8 +279,8 @@ def vsamp(center, kappa, n):
         t = -1000
         u = 1
         while t < np.log(u):
-            z = sp.stats.beta.rvs(m, m)  # z is a beta rand var
-            u = sp.stats.uniform.rvs()  # u is unif rand var
+            z = ss.beta.rvs(m, m)  # z is a beta rand var
+            u = ss.uniform.rvs()  # u is unif rand var
             w = (1 - (1 + b) * z) / (1 - (1 - b) * z)
             t = l * w + (d - 1) * np.log(1 - x0 * w) - c
 

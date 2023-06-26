@@ -84,10 +84,10 @@ def EMvMFNM(X, W, k):
             con2 = abs(llh[1, t] - llh[1, t - 1]) < tol * 100 * abs(llh[1, t])
             converged = min(con1, con2)
 
-    if converged:
-        print("Converged in", t, "steps.")
-    else:
-        print("Not converged in ", maxiter, " steps.")
+    # if converged:
+    #     print("Converged in", t, "steps.")
+    # else:
+    #     print("Not converged in ", maxiter, " steps.")
 
     return mu, kappa, m, omega, alpha
 

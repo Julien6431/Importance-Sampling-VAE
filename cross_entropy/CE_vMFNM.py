@@ -63,10 +63,10 @@ Based on:
 
 
 def CEIS_vMFNM(N, p, phi, t, distr, k_init):
-    if (N * p != np.fix(N * p)) or (1 / p != np.fix(1 / p)):
-        raise RuntimeError(
-            "N*p and 1/p must be positive integers. Adjust N and p accordingly"
-        )
+    # if (N * p != np.fix(N * p)) or (1 / p != np.fix(1 / p)):
+    #     raise RuntimeError(
+    #         "N*p and 1/p must be positive integers. Adjust N and p accordingly"
+    #     )
         
     dim = distr.getDimension()
 
@@ -76,7 +76,7 @@ def CEIS_vMFNM(N, p, phi, t, distr, k_init):
 
     # Initialization of variables and storage
     j = 0  # initial level
-    max_it = 50  # estimated number of iterations
+    max_it = 20  # estimated number of iterations
     N_tot = 0  # total number of samples
 
     # Definition of parameters of the random variables (uncorrelated standard normal)
@@ -100,8 +100,13 @@ def CEIS_vMFNM(N, p, phi, t, distr, k_init):
     kappa_hat = kappa_init
     omega_hat = omega_init
     m_hat = m_init
-    gamma_hat[j] = 1
+    gamma_hat[j] = -np.inf
     alpha_hat = alpha_init
+    
+    if type(phi)==ot.func.Function:
+        compute_output = lambda x : np.array(phi(x)).flatten() 
+    else:
+        compute_output = lambda x : phi(np.array(x))#.reshape((-1,1))
 
     # Iteration
     for j in range(max_it):
@@ -120,7 +125,8 @@ def CEIS_vMFNM(N, p, phi, t, distr, k_init):
         N_tot += N
 
         # Evaluation of the limit state function
-        Y = np.array(phi(X)).flatten()
+        Y = compute_output(X)
+        #Y = np.array(phi(X)).flatten()
 
         # Calculation of the likelihood ratio
         W_log = likelihood_ratio_log(X, mu_cur, kappa_cur, omega_cur, m_cur, alpha_cur)
@@ -132,7 +138,7 @@ def CEIS_vMFNM(N, p, phi, t, distr, k_init):
 
         # obtaining estimator gamma
         gamma_hat[j + 1] = np.minimum(t,np.nanpercentile(Y,100*(1-p)))
-        print("\nIntermediate failure threshold: ", gamma_hat[j + 1])
+        #print("\nIntermediate failure threshold: ", gamma_hat[j + 1])
 
         # Indicator function
         I = (Y >= gamma_hat[j + 1])
@@ -155,7 +161,7 @@ def CEIS_vMFNM(N, p, phi, t, distr, k_init):
     I = (Y >= gamma_hat[j])
     Pr = 1 / N * np.sum(np.exp(W_log[I, :]))
 
-    return Pr, lv, N_tot, gamma_hat, samples, k_fin
+    return Pr, lv, N_tot, gamma_hat, samples
 
 
 # ===========================================================================
