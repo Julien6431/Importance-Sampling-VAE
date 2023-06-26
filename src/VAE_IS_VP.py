@@ -55,6 +55,8 @@ def fitted_ae(X,y,latent_dim,epochs,batch_size):
 
 def fitted_vae(X,y,latent_dim,K,epochs=100,batch_size=100):
     
+    input_dim = X.shape[1]
+    
     mean_x = np.mean(X,axis=0)
     std_x = np.std(X,axis=0)
     
@@ -63,15 +65,16 @@ def fitted_vae(X,y,latent_dim,K,epochs=100,batch_size=100):
     max_y = np.max(y)
     y_normed = y/max_y
     
-    input_dim = X.shape[1]
-    
     vp_layer = initial_vp_layer(K,X_normed,y_normed)
+    #vp_layer = initial_vp_layer(K,X,y)
     
     auto_encoder = fitted_ae(X_normed,y_normed,latent_dim,epochs=epochs,batch_size=batch_size)
+    #auto_encoder = fitted_ae(X,y,latent_dim,epochs=epochs,batch_size=batch_size)
     encoder,decoder = auto_encoder.get_encoder_decoder()
     
-    vae = VAE(encoder, decoder, vp_layer, input_dim, latent_dim, K,mean_x,std_x)
+    vae = VAE(encoder, decoder, vp_layer, input_dim, latent_dim, K, mean_x,std_x)
     vae.compile(optimizer=keras.optimizers.Adam())
+    #vae.fit(tf.convert_to_tensor(X),tf.convert_to_tensor(y), epochs=epochs, batch_size=batch_size,verbose=0)
     vae.fit(tf.convert_to_tensor(X_normed),tf.convert_to_tensor(y_normed), epochs=epochs, batch_size=batch_size,verbose=0)
     vae.set_ot_prior()  
     vae.set_ot_distrX(M=10**3)

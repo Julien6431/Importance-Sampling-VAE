@@ -48,7 +48,7 @@ def create_decoder(decoder,input_dim,latent_dim):
 #%% VAE class
 
 class VAE(keras.Model):
-    def __init__(self, encoder, decoder, vp_layer, input_dim, latent_dim, K, mean_x,std_x, **kwargs):
+    def __init__(self, encoder, decoder, vp_layer, input_dim, latent_dim, K, mean_x, std_x, **kwargs):
         super(VAE, self).__init__(**kwargs)
         self.input_dim = input_dim
         self.latent_dim = latent_dim
@@ -64,6 +64,7 @@ class VAE(keras.Model):
         
         self.mean_x = mean_x
         self.std_x = std_x
+        #self.input_distr = input_distr
 
     @property
     def metrics(self):
@@ -170,11 +171,25 @@ class VAE(keras.Model):
     
     
     def getSample(self,N,with_pdf=False):
-        new_sample_std = np.array(self.distrX.getSample(N))
-        new_sample = ot.Sample(self.mean_x + self.std_x*new_sample_std)
+        
+        #threshold_g = 1e-100
+        
+        new_sample_std = self.distrX.getSample(N)
+        new_sample_std_np = np.array(new_sample_std)
+        new_sample = ot.Sample(self.mean_x + self.std_x*new_sample_std_np)
         if with_pdf==True:
-            det = np.prod(self.std_x)
-            g_X = self.distrX.computePDF(new_sample_std)/det
-            return new_sample,g_X
+            
+            #log_fx = np.array(self.input_distr.computeLogPDF(new_sample)).flatten()
+            log_gx_std = np.array(self.distrX.computeLogPDF(new_sample_std)).flatten()
+            log_std = np.sum(np.log(self.std_x.astype('float64')))
+            
+            log_gx = log_gx_std - log_std
+            
+            #det = np.prod(self.std_x.astype('float64'))
+            #num = np.array(self.distrX.computePDF(new_sample_std))
+            #g_X_np = (num/det+threshold_g)/2 + np.abs(num/det-threshold_g)/2
+            #g_X = self.distrX.computePDF(new_sample_std)/det
+            #g_X = ot.Sample(g_X_np)
+            return new_sample,log_gx.reshape((-1,1))
         else:
             return new_sample
