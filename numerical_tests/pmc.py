@@ -67,31 +67,7 @@ def pmc(target_distr,sigma2,N,max_iter):
     final_distr = ot.Mixture(mixture,w_np)
     
     return samples,final_distr
-    
-    
-    # X = init_distr.getSample(N)
-    # log_targetX = target_distr.computeLogPDF(X)
-    # log_initX = init_distr.computeLogPDF(X)
-    
-    # W = np.exp(log_targetX - log_initX)
-    # samples = [X]
-    # log_W = [log_targetX - log_initX]
-    
-    # for n in range(max_iter):
-    #     #print(n)
-    #     vae,_,_ = fitted_vae(np.array(X).astype('float32'), W.astype('float32'), latent_dim=latent_dim, K=75)
-        
-    #     X,log_gX = vae.getSample(N,with_pdf=True)
-    #     log_targetX = target_distr.computeLogPDF(X)
-    #     W = np.exp(log_targetX-log_gX)
-        
-    #     samples.append(X)
-    #     log_W.append(log_targetX-log_gX)
-    
-    # return samples,log_W
-
-
-    
+       
     
 #%% Single test
 

@@ -150,7 +150,7 @@ N_1 = 10**4
 
 #%%
 
-n_start = 61
+n_start = 95
 
 for n in range(n_start,n_rep):
     start = time.time()
