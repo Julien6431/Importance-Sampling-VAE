@@ -14,17 +14,12 @@ from tensorflow.keras import layers
 #%% Encoder/Decoder architecture
     
 def create_encoder(input_dim,latent_dim):
-        
-    threshold_min = -10
-    threshold_max = 10**1
     
     encoder_inputs = keras.Input(shape=(input_dim,))
     x = layers.Dense(32, activation="relu")(encoder_inputs)
     x = layers.Dense(16, activation="relu")(x)
     z = layers.Dense(latent_dim, activation="linear")(x)
     z_log_var = layers.Dense(latent_dim, activation="linear")(x)
-    #◘z_log_var = tf.math.maximum(z_log_var, threshold_min)
-    #z_log_var = tf.math.minimum(z_log_var, threshold_max)
     encoder = keras.Model(encoder_inputs, [z,z_log_var], name="encoder")
     return encoder
 

@@ -64,7 +64,6 @@ class VAE(keras.Model):
         
         self.mean_x = mean_x
         self.std_x = std_x
-        #self.input_distr = input_distr
 
     @property
     def metrics(self):
@@ -171,25 +170,16 @@ class VAE(keras.Model):
     
     
     def getSample(self,N,with_pdf=False):
-        
-        #threshold_g = 1e-100
-        
+                
         new_sample_std = self.distrX.getSample(N)
         new_sample_std_np = np.array(new_sample_std)
         new_sample = ot.Sample(self.mean_x + self.std_x*new_sample_std_np)
+        
         if with_pdf==True:
-            
-            #log_fx = np.array(self.input_distr.computeLogPDF(new_sample)).flatten()
             log_gx_std = np.array(self.distrX.computeLogPDF(new_sample_std)).flatten()
             log_std = np.sum(np.log(self.std_x.astype('float64')))
-            
             log_gx = log_gx_std - log_std
-            
-            #det = np.prod(self.std_x.astype('float64'))
-            #num = np.array(self.distrX.computePDF(new_sample_std))
-            #g_X_np = (num/det+threshold_g)/2 + np.abs(num/det-threshold_g)/2
-            #g_X = self.distrX.computePDF(new_sample_std)/det
-            #g_X = ot.Sample(g_X_np)
+        
             return new_sample,log_gx.reshape((-1,1))
         else:
             return new_sample
