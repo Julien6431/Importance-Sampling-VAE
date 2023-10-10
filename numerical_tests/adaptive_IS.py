@@ -10,7 +10,6 @@ Created on Thu May 11 15:38:28 2023
 import numpy as np
 import openturns as ot
 import matplotlib.pyplot as plt
-import tensorflow as tf
 import tensorflow.keras.backend as kb
 import time
 
@@ -43,10 +42,9 @@ def adaptive_is(target_distr,init_distr,N,max_iter,latent_dim=2):
     
     W = np.exp(log_targetX - log_initX)
     samples = [X]
-    log_W = [log_targetX - log_initX]
+    #log_W = [log_targetX - log_initX]
     
     for n in range(max_iter):
-        #print(n)
         kb.clear_session()
         vae,_,_ = fitted_vae(np.array(X).astype('float32'), W.astype('float32'), latent_dim=latent_dim, K=75)
         
@@ -55,14 +53,14 @@ def adaptive_is(target_distr,init_distr,N,max_iter,latent_dim=2):
         W = np.exp(log_targetX-log_gX)
         
         samples.append(X)
-        log_W.append(log_targetX-log_gX)
+        #log_W.append(log_targetX-log_gX)
     
         mean_x = vae.mean_x.astype('float64')
         std_x = vae.std_x.astype('float64')
         distrX = vae.distrX
      
          
-    return samples,[distrX,mean_x,std_x]
+    return X,W,[distrX,mean_x,std_x]
 
     
 #%% Single test
@@ -100,7 +98,7 @@ def single_test(dim):
                 
     elif dim == 20:
         distr_1 = ot.Student(4,-2,1)
-        distr_2 = ot.LogNormal(0,1,.5)
+        distr_2 = ot.LogNormal(0,1)
         distr_3 = ot.Triangular(1,3,5)
         
         left_distrs = [ot.Normal(2,1) for _ in range(dim-3)]
@@ -110,16 +108,16 @@ def single_test(dim):
         init_mean = ot.Point(np.zeros(dim))
         init_cov_matrix = ot.CovarianceMatrix(2*np.eye(dim)) 
         init_distr = ot.Normal(init_mean,init_cov_matrix)
-        samples,log_W = adaptive_is(target_distr, init_distr, 10**4, 10,latent_dim=8)
+        sample,W,vae = adaptive_is(target_distr, init_distr, 10**4, 10,latent_dim=8)
         
         xx = np.linspace(-6,6,1001).reshape((-1,1))
         yy2 = np.array(init_distr.getMarginal(0).computePDF(xx)).flatten()
         
-        last_sample = np.array(samples[-1])
+        last_sample = np.array(sample)
         fig,ax = plt.subplots(2,5,figsize=(12,6))
         for i in range(2):
             for j in range(5):
-                ax[i,j].hist(last_sample[:,5*i+j],bins=100,density=True)
+                ax[i,j].hist(last_sample[:,5*i+j],bins=100,density=True,weights=W)
                 yy = np.array(target_distr.getMarginal(5*i+j).computePDF(xx)).flatten()
                 ax[i,j].plot(xx,yy)
                 ax[i,j].plot(xx,yy2)
@@ -145,8 +143,8 @@ init_distr_1 = ot.Normal(dim)
 
 n_rep = 100
 N_1 = 10**4
-# divergence_KL_1 = np.zeros(n_rep)
-# samples_list_1 = []
+divergence_KL_1 = np.zeros(n_rep)
+samples_list_1 = []
 
 #%%
 
@@ -171,32 +169,76 @@ dim = 20
 
 
 distr_1 = ot.Student(4,-2,1)
-distr_2 = ot.LogNormal(0,1,.5)
+distr_2 = ot.LogNormal(0,1)
 distr_3 = ot.Triangular(1,3,5)
 
-target_mean = ot.Point(2*np.ones(dim-3))
-target_cov_matrix = ot.CovarianceMatrix(np.eye(dim-3))
+# target_mean = ot.Point(2*np.ones(dim-3))
+# target_cov_matrix = ot.CovarianceMatrix(np.eye(dim-3))
+
 left_distrs = [ot.Normal(2,1) for _ in range(dim-3)]
 
-target_distr_2 = ot.ComposedDistribution([distr_1,distr_2,distr_3] + left_distrs)
+R = ot.CorrelationMatrix(dim)
+for i in range(dim-1):
+    R[i, i+1] = 0.25
+copula = ot.NormalCopula(R)
+
+target_distr_2 = ot.ComposedDistribution([distr_1,distr_2,distr_3] + left_distrs,copula)
 
 init_mean = ot.Point(np.zeros(dim))
 init_cov_matrix = ot.CovarianceMatrix(2*np.eye(dim)) 
 init_distr_2 = ot.Normal(init_mean,init_cov_matrix)
 
 
-n_rep = 100
+n_rep = 10
 N_2 = 10**4
 divergence_KL_2 = np.zeros(n_rep)
+samples_list_2 = []
+weights_2 = []
 
 #%%
 
-samples_list_2 = []
 n_start = 0
 
 for n in range(n_start,n_rep):
     start = time.time()
-    samples,log_W = adaptive_is(target_distr_2, init_distr_2, N_2, 10, latent_dim=8)
+    samples,W,vae = adaptive_is(target_distr_2, init_distr_2, N_2, 10, latent_dim=8)
     samples_list_2.append(samples)
-    divergence_KL_2[n] = compute_Dkl(log_W[-1])
+    weights_2.append(W)
+    divergence_KL_2[n] = compute_Dkl(target_distr_2,vae[0],vae[1],vae[2])
     print(f"Loop n°{n+1} done in {time.time() - start}")
+    
+#%%
+
+xx = np.linspace(-6,6,1001).reshape((-1,1))
+
+idx = 9
+
+fig,ax = plt.subplots(4,5,figsize=(16,10))
+for i in range(4):
+    for j in range(5):
+        ax[i,j].hist(np.array(samples_list_2[idx])[:,5*i+j],bins=100,density=True,weights=weights_2[idx])
+        yy = np.array(target_distr_2.getMarginal(5*i+j).computePDF(xx)).flatten()
+        ax[i,j].plot(xx,yy)        
+        
+        
+        
+#%%
+
+import pickle
+
+fileObj = open('Data/generation_vae_20.pkl', 'wb')
+pickle.dump(samples_list_2,fileObj)
+fileObj.close()
+
+fileObj = open('Data/generation_vae_20_weights.pkl', 'wb')
+pickle.dump(weights_2,fileObj)
+fileObj.close()
+        
+        
+        
+        
+        
+        
+        
+        
+        
