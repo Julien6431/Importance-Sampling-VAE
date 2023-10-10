@@ -63,10 +63,6 @@ Based on:
 
 
 def CEIS_vMFNM(N, p, phi, t, distr, k_init):
-    # if (N * p != np.fix(N * p)) or (1 / p != np.fix(1 / p)):
-    #     raise RuntimeError(
-    #         "N*p and 1/p must be positive integers. Adjust N and p accordingly"
-    #     )
         
     dim = distr.getDimension()
 
@@ -106,7 +102,7 @@ def CEIS_vMFNM(N, p, phi, t, distr, k_init):
     if type(phi)==ot.func.Function:
         compute_output = lambda x : np.array(phi(x)).flatten() 
     else:
-        compute_output = lambda x : phi(np.array(x))#.reshape((-1,1))
+        compute_output = lambda x : phi(np.array(x))
 
     # Iteration
     for j in range(max_it):
@@ -126,7 +122,6 @@ def CEIS_vMFNM(N, p, phi, t, distr, k_init):
 
         # Evaluation of the limit state function
         Y = compute_output(X)
-        #Y = np.array(phi(X)).flatten()
 
         # Calculation of the likelihood ratio
         W_log = likelihood_ratio_log(X, mu_cur, kappa_cur, omega_cur, m_cur, alpha_cur)
