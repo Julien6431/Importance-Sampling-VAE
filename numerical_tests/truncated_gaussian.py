@@ -50,7 +50,7 @@ ax.scatter(np.array(z)[:,0],np.array(z)[:,1],color='black',s=20)
 
 fig.savefig(f"Figures/truncated_gaussian_latent_space_{input_dim}_{latent_dim}_{K}.png",bbox_inches='tight')
 
-#%% New sample 
+#%% New sample generation
 
 distr1 = ot.TruncatedDistribution(ot.Normal(1), -1.5, ot.TruncatedDistribution.UPPER)
 distr2 = ot.TruncatedDistribution(ot.Normal(1), 1.5, ot.TruncatedDistribution.LOWER)
@@ -62,7 +62,6 @@ yyze = ot.Normal(1).computePDF(xx)
 
 full = ot.ComposedDistribution([failure_distr] + (input_dim-1)*[ot.Normal(1)])
 
-#new_X,g_X = vae.getSample(10**4,with_pdf=True)
 new_X = vae.getSample(10**5,with_pdf=False)
 
 fig,ax = plt.subplots(2,5,figsize=(15,6))
