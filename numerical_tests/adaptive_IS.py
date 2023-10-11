@@ -11,7 +11,6 @@ import numpy as np
 import openturns as ot
 import matplotlib.pyplot as plt
 import tensorflow.keras.backend as kb
-import time
 
 import sys
 sys.path.append("../src/")
@@ -34,7 +33,7 @@ def compute_Dkl(target_distr,simu_distr,mean_x,std_x):
     return np.mean(log_target - log_simu)
     
 
-def adaptive_is(target_distr,init_distr,N,max_iter,latent_dim=2):
+def adaptive_is_vae(target_distr,init_distr,N,max_iter,latent_dim=2):
         
     X = init_distr.getSample(N)
     log_targetX = target_distr.computeLogPDF(X)
@@ -42,7 +41,6 @@ def adaptive_is(target_distr,init_distr,N,max_iter,latent_dim=2):
     
     W = np.exp(log_targetX - log_initX)
     samples = [X]
-    #log_W = [log_targetX - log_initX]
     
     for n in range(max_iter):
         kb.clear_session()
@@ -53,7 +51,6 @@ def adaptive_is(target_distr,init_distr,N,max_iter,latent_dim=2):
         W = np.exp(log_targetX-log_gX)
         
         samples.append(X)
-        #log_W.append(log_targetX-log_gX)
     
         mean_x = vae.mean_x.astype('float64')
         std_x = vae.std_x.astype('float64')
@@ -79,7 +76,7 @@ def single_test(dim):
         init_mean = ot.Point(np.zeros(dim))
         init_cov_matrix = ot.CovarianceMatrix(1*np.eye(dim)) 
         init_distr = ot.Normal(init_mean,init_cov_matrix)
-        samples,vae = adaptive_is(target_distr, init_distr, 10**4, 10,latent_dim=4)
+        samples,vae = adaptive_is_vae(target_distr, init_distr, 10**4, 10,latent_dim=4)
 
 
         xx = np.linspace(-6,6,1001).reshape((-1,1))
@@ -94,7 +91,6 @@ def single_test(dim):
                 ax[i,j].plot(xx,yy)
                 ax[i,j].plot(xx,yy2)
                 
-        print(compute_Dkl(target_distr, vae[0],vae[1],vae[2]))
                 
     elif dim == 20:
         distr_1 = ot.Student(4,-2,1)
@@ -108,7 +104,7 @@ def single_test(dim):
         init_mean = ot.Point(np.zeros(dim))
         init_cov_matrix = ot.CovarianceMatrix(2*np.eye(dim)) 
         init_distr = ot.Normal(init_mean,init_cov_matrix)
-        sample,W,vae = adaptive_is(target_distr, init_distr, 10**4, 10,latent_dim=8)
+        sample,W,vae = adaptive_is_vae(target_distr, init_distr, 10**4, 10,latent_dim=8)
         
         xx = np.linspace(-6,6,1001).reshape((-1,1))
         yy2 = np.array(init_distr.getMarginal(0).computePDF(xx)).flatten()
@@ -124,9 +120,7 @@ def single_test(dim):
 
     return fig,ax
 
-st = time.time()
 fig,ax = single_test(20)    
-print(time.time()-st)        
 
 #%% Test case 1
 
@@ -146,22 +140,21 @@ N_1 = 10**4
 divergence_KL_1 = np.zeros(n_rep)
 samples_list_1 = []
 
-#%%
-
-n_start = 95
-
-for n in range(n_start,n_rep):
-    start = time.time()
-    samples,vae = adaptive_is(target_distr_1, init_distr_1, N_1, 10, latent_dim=4)
+for n in range(n_rep):
+    samples,vae = adaptive_is_vae(target_distr_1, init_distr_1, N_1, 10, latent_dim=4)
     samples_list_1.append(samples[-1])
     divergence_KL_1[n] = compute_Dkl(target_distr_1,vae[0],vae[1],vae[2])
-    print(f"Loop n°{n+1} done in {time.time() - start}")
     
 
 #%% Save data
 
+import pickle
+
+fileObj = open('Data/generation_vae_10.pkl', 'wb')
+pickle.dump(samples_list_1,fileObj)
+fileObj.close()
+
 np.save("Data/generation_vae_10_dkl.npy",divergence_KL_1)
-    
     
 #%% Test case 2
 
@@ -171,9 +164,6 @@ dim = 20
 distr_1 = ot.Student(4,-2,1)
 distr_2 = ot.LogNormal(0,1)
 distr_3 = ot.Triangular(1,3,5)
-
-# target_mean = ot.Point(2*np.ones(dim-3))
-# target_cov_matrix = ot.CovarianceMatrix(np.eye(dim-3))
 
 left_distrs = [ot.Normal(2,1) for _ in range(dim-3)]
 
@@ -195,34 +185,14 @@ divergence_KL_2 = np.zeros(n_rep)
 samples_list_2 = []
 weights_2 = []
 
-#%%
-
-n_start = 0
-
-for n in range(n_start,n_rep):
-    start = time.time()
-    samples,W,vae = adaptive_is(target_distr_2, init_distr_2, N_2, 10, latent_dim=8)
+for n in range(n_rep):
+    samples,W,vae = adaptive_is_vae(target_distr_2, init_distr_2, N_2, 10, latent_dim=8)
     samples_list_2.append(samples)
     weights_2.append(W)
     divergence_KL_2[n] = compute_Dkl(target_distr_2,vae[0],vae[1],vae[2])
-    print(f"Loop n°{n+1} done in {time.time() - start}")
-    
-#%%
-
-xx = np.linspace(-6,6,1001).reshape((-1,1))
-
-idx = 9
-
-fig,ax = plt.subplots(4,5,figsize=(16,10))
-for i in range(4):
-    for j in range(5):
-        ax[i,j].hist(np.array(samples_list_2[idx])[:,5*i+j],bins=100,density=True,weights=weights_2[idx])
-        yy = np.array(target_distr_2.getMarginal(5*i+j).computePDF(xx)).flatten()
-        ax[i,j].plot(xx,yy)        
         
         
-        
-#%%
+#%% Save data
 
 import pickle
 
@@ -233,12 +203,3 @@ fileObj.close()
 fileObj = open('Data/generation_vae_20_weights.pkl', 'wb')
 pickle.dump(weights_2,fileObj)
 fileObj.close()
-        
-        
-        
-        
-        
-        
-        
-        
-        
