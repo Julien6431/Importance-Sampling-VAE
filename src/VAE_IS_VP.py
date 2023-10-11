@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Sun Feb 26 12:04:51 2023
-
-@author: juliendemange-chryst
+@author: Julien Demange-Chryst
 """
 
 

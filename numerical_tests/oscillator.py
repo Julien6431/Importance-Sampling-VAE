@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """
-Created on Wed Mar 15 09:54:47 2023
-
 @author: Julien Demange-Chryst
 """
 

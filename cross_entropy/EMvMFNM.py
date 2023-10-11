@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Mar 22 15:25:42 2023
-
-@author: jdemange
-"""
-
 import numpy as np
 import scipy as sp
 np.seterr(all='ignore')

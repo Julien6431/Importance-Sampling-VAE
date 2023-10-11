@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Tue Feb 28 18:42:19 2023
-
-@author: juliendemange-chryst
+@author: Julien Demange-Chryst
 """
 
 #%% Modules
@@ -122,7 +118,6 @@ def CEIS_VAE(N,p,phi,t,distr,latent_dim=2,K=75,lat_space_plot=False):
     
     #Initialisation
     X = distr.getSample(N)
-    dim = distr.getDimension()
     samples = [X]
     Y = compute_output(X)
     N_tot += N
@@ -140,7 +135,7 @@ def CEIS_VAE(N,p,phi,t,distr,latent_dim=2,K=75,lat_space_plot=False):
                         
         vae,_,_ = fitted_vae(np.array(X)[I.flatten()].astype("float32"),WI[I.flatten()].astype("float32"),latent_dim,K,epochs=100,batch_size=100)
         
-        if (dim==2) and (lat_space_plot==True):
+        if (latent_dim==2) and (lat_space_plot==True):
             fig,ax = plot_latent_space(vae, np.array(X)[I.flatten()].astype("float32"), WI[I.flatten()].astype("float32"))
             fig.show()
         
