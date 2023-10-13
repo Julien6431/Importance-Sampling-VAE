@@ -1,8 +1,3 @@
-"""
-@author: Julien Demange-Chryst
-"""
-
-
 #%% Modules
 
 import numpy as np
