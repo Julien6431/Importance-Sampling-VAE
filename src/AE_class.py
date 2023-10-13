@@ -1,7 +1,3 @@
-"""
-@author: Julien Demange-Chryst
-"""
-
 #%% Modules
 
 import tensorflow as tf
