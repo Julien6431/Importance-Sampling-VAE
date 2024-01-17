@@ -38,7 +38,7 @@ def fitted_ae(X,y,latent_dim,epochs,batch_size):
     input_dim = X.shape[1]
     ae = AutoEncoder(input_dim, latent_dim)
     ae.compile(optimizer=keras.optimizers.Adam())
-    ae.fit(tf.convert_to_tensor(X),tf.convert_to_tensor(y), epochs=epochs, batch_size=batch_size,verbose=0)
+    ae.fit(tf.convert_to_tensor(X),tf.convert_to_tensor(y), epochs=epochs, batch_size=batch_size,verbose=1)
     return ae
 
 
