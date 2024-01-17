@@ -25,7 +25,7 @@ def plot_latent_space(vae,X,y):
     
     vae_encoder,vae_decoder = vae.get_encoder_decoder()
     
-    fig,ax = plt.subplots(figsize=(10,9))
+    fig,ax = plt.subplots(figsize=(20,10))
     
     pseudo_inputs = vae.get_pseudo_inputs()
     _, _, z = vae_encoder(pseudo_inputs)
@@ -56,7 +56,9 @@ def plot_latent_space(vae,X,y):
     ax.tick_params(axis='x',labelsize='xx-large')
     ax.tick_params(axis='y',labelsize='xx-large')
     
-    fig.savefig("Figures/latent_space_four_branches_100.png",bbox_inches='tight',dpi=500)
+    ax.set_title("Representation of the 2-dimensional latent space at the last iteration of the CE algorithm",fontsize=20)
+    
+    fig.savefig("Figures/latent_space_four_branches_100_slide.png",bbox_inches='tight',dpi=500)
     
     return fig,ax
 
@@ -101,7 +103,7 @@ def CEIS_VAE(N,p,phi,t,distr,latent_dim=2,K=75,lat_space_plot=False):
     """
     
     j = 0 #current iteration
-    max_it = 50 #maximal number of iterations
+    max_it = 20 #maximal number of iterations
     N_tot = 0 #number of calls to the function
     gamma_hat = np.zeros(max_it)
     

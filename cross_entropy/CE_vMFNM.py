@@ -121,7 +121,6 @@ def CEIS_vMFNM(N, p, phi, t, distr, k_init):
 
         # Check convergence
         if gamma_hat[j] >= t:
-            k_fin = len(alpha_cur)
             break
 
         # obtaining estimator gamma
@@ -146,7 +145,7 @@ def CEIS_vMFNM(N, p, phi, t, distr, k_init):
     gamma_hat = gamma_hat[: lv + 1]
 
     # Calculation of Probability of failure
-    I = (Y >= gamma_hat[j])
+    I = (Y >= t)
     Pr = 1 / N * np.sum(np.exp(W_log[I, :]))
 
     return Pr, lv, N_tot, gamma_hat, samples
