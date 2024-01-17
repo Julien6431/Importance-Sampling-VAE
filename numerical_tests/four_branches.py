@@ -33,10 +33,10 @@ input_dim = 2
 latent_dim = 2
 N = 10**4
 
-x1_min = -5
-x1_max = 5
-x2_min = -5
-x2_max = 5
+x1_min = -6
+x1_max = 6
+x2_min = -6
+x2_max = 6
 
 n_points = 10**2+1
 
@@ -54,11 +54,11 @@ for i in tqdm(range(n_points)):
 ot_function = ot.PythonFunction(input_dim,1,four_branches)
 X = ot.Normal(input_dim).getSample(N)
 
-fig,ax = plt.subplots(figsize=(11,9))
-cnt = ax.contourf(X1, X2, values_function,levels=100)
+fig,ax = plt.subplots(figsize=(20,10))
+cnt = ax.contourf(X1, X2, values_function,levels=25,cmap="binary")
 ct = ax.contour(X1, X2, values_function, [t],colors='red',linewidths=3)
 
-cbar = fig.colorbar(cnt, ax=ax, ticks=[0,1,2,3,4,5,6,7])
+cbar = fig.colorbar(cnt, ax=ax, ticks=[0,1,2,3,4,5,6,7,8])
 for ta in cbar.ax.get_yticklabels():
      ta.set_fontsize(20)
 
@@ -68,7 +68,10 @@ ax.set_ylabel("$X_2$",fontsize=20)
 ax.tick_params(axis='x',labelsize='xx-large')
 ax.tick_params(axis='y',labelsize='xx-large')
 
-fig.savefig("Figures/four_branches_2d.png",bbox_inches='tight',dpi=500)
+ax.set_xlim(-6,6)
+ax.set_ylim(-6,6)
+
+fig.savefig("Figures/four_branches_2d_slide.png",bbox_inches='tight',dpi=500)
 
 #%% CE-VAE
 
@@ -81,12 +84,28 @@ proba, samples, N_tot = CEIS_VAE(N,.25, ot_function, t, input_distr,latent_dim=2
 print(f"Estimated failure probability is {proba} with {N_tot} calls to phi.")
 
 if input_dim==2:
-    fig, ax = plt.subplots(figsize=(15,15))
-    ax.contour(X1, X2, values_function, [t], colors="r", linewidths=3)
+    fig, ax = plt.subplots(figsize=(20,10))
+    cnt = ax.contourf(X1, X2, values_function,levels=25,cmap="binary")
+    
+    cbar = fig.colorbar(cnt, ax=ax, ticks=[0,1,2,3,4,5,6,7,8])
+    for ta in cbar.ax.get_yticklabels():
+         ta.set_fontsize(20)
+    
     for sample in samples:
-        ax.plot(*np.array(samples).T, ".", markersize=10)
-
-    fig.savefig("Figures/four_branches_ce_samples_dim2.png",bbox_inches='tight')
+        ax.plot(*np.array(samples).T, ".", markersize=4)
+    
+    ct = ax.contour(X1, X2, values_function, [t], colors="r", linewidths=3)
+    
+    plt.clabel(ct, inline=1, fontsize=30)
+    
+    
+    ax.set_xlim(-6,6)
+    ax.set_ylim(-6,6)
+    ax.set_title("Cross-entropy algorithm with a VAE as auxiliary density",fontsize=20)
+    ax.set_xlabel("$X_1$",fontsize=20)
+    ax.set_ylabel("$X_2$",fontsize=20)
+    ax.tick_params(axis='x',labelsize='xx-large')
+    ax.tick_params(axis='y',labelsize='xx-large')
 
 
 #%% Multiple runs
@@ -117,11 +136,10 @@ for n in tqdm(range(n_rep)):
     proba_vM,_,n_tot,_,_ = CEIS_vMFNM(N_ce,p,ot_function,t,input_distr,3)
     proba_ceis_vM_3[n] = proba_vM
     N_tots[n,2] = n_tot
-    
+        
     proba_vM,_,n_tot,_,_ = CEIS_vMFNM(N_ce,p,ot_function,t,input_distr,5)
     proba_ceis_vM_5[n] = proba_vM
     N_tots[n,3] = n_tot
-    
     
 
 #%% Save data
@@ -129,6 +147,6 @@ for n in tqdm(range(n_rep)):
 np.savez(f"Data/four_branches_failprob_estimations_{input_dim}.npz",
          CE_vae=proba_ceis_vae,
          CE_vM=proba_ceis_vM,
-         CE_vae_3=proba_ceis_vM_3,
-         CE_vae_5=proba_ceis_vM_5,
+         CE_vM_3=proba_ceis_vM_3,
+         CE_vM_5=proba_ceis_vM_5,
          N_tots=N_tots)

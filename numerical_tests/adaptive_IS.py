@@ -69,18 +69,18 @@ def single_test(dim):
         init_mean = ot.Point(np.zeros(dim))
         init_cov_matrix = ot.CovarianceMatrix(1*np.eye(dim)) 
         init_distr = ot.Normal(init_mean,init_cov_matrix)
-        samples,vae = adaptive_is_vae(target_distr, init_distr, 10**4, 10,latent_dim=4)
+        samples,W,vae = adaptive_is_vae(target_distr, init_distr, 10**4, 5,latent_dim=4)
 
 
         xx = np.linspace(-6,6,1001).reshape((-1,1))
         yy = np.array(target_distr.getMarginal(0).computePDF(xx)).flatten()
         yy2 = np.array(init_distr.getMarginal(0).computePDF(xx)).flatten()
         
-        last_sample = np.array(samples[-1])
+        last_sample = np.array(samples)
         fig,ax = plt.subplots(2,5,figsize=(12,6))
         for i in range(2):
             for j in range(5):
-                ax[i,j].hist(last_sample[:,5*i+j],bins=100,density=True)
+                ax[i,j].hist(last_sample[:,5*i+j],bins=100,density=True,weights=W)
                 ax[i,j].plot(xx,yy)
                 ax[i,j].plot(xx,yy2)
                 
@@ -111,9 +111,12 @@ def single_test(dim):
                 ax[i,j].plot(xx,yy)
                 ax[i,j].plot(xx,yy2)
 
+    dkl = compute_Dkl(target_distr,vae[0],vae[1],vae[2])
+    print(dkl)
+
     return fig,ax
 
-fig,ax = single_test(20)    
+fig,ax = single_test(10)    
 
 #%% Test case 1
 
