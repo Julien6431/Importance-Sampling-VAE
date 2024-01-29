@@ -137,7 +137,7 @@ divergence_KL_1 = np.zeros(n_rep)
 samples_list_1 = []
 
 for n in range(n_rep):
-    samples,vae = adaptive_is_vae(target_distr_1, init_distr_1, N_1, 10, latent_dim=4)
+    samples,W,vae = adaptive_is_vae(target_distr_1, init_distr_1, N_1, 10, latent_dim=4)
     samples_list_1.append(samples[-1])
     divergence_KL_1[n] = compute_Dkl(target_distr_1,vae[0],vae[1],vae[2])
     
