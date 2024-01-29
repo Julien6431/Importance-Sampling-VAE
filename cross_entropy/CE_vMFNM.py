@@ -1,7 +1,7 @@
 import numpy as np
 import scipy as sp
 import openturns as ot
-from cross_entropy.EMvMFNM import EMvMFNM
+from EMvMFNM import EMvMFNM
 
 """
 ---------------------------------------------------------------------------
