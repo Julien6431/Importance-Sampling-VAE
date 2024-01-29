@@ -6,8 +6,11 @@ from silence_tensorflow import silence_tensorflow
 silence_tensorflow()
 from tensorflow import keras
 from tensorflow.keras import layers
-from src.AE_class import AutoEncoder
-from src.VAE_class import VAE
+
+import sys
+sys.path.append("src")
+from AE_class import AutoEncoder
+from VAE_class import VAE
 
 #%% Initial VampPrior
 
