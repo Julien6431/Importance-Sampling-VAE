@@ -12,6 +12,15 @@ The folder "numerical_tests" contains the implementation of the test cases from 
 
 Feel free to test these algorithms on your own test cases and/or to play with the proposed ones.
 
+## Import
+
+In order to import the current project locally, please execute the following lines in a terminal:
+
+```
+git clone https://github.com/Julien6431/Importance-Sampling-VAE.git
+cd Importance-Sampling-VAE
+```
+
 
 ## Requirements
 
