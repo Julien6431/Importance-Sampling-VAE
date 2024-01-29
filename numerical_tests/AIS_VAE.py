@@ -4,6 +4,8 @@ import numpy as np
 import openturns as ot
 import matplotlib.pyplot as plt
 import tensorflow.keras.backend as kb
+import sys
+sys.path.append("src")
 from src.VAE_IS_VP import fitted_vae
 
 
