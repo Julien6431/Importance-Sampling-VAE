@@ -2,9 +2,7 @@
 
 import numpy as np
 import openturns as ot
-import sys
-sys.path.append("../src/")
-from VAE_IS_VP import fitted_vae
+from src.VAE_IS_VP import fitted_vae
 
 import matplotlib.pyplot as plt
 from matplotlib import cm
