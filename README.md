@@ -12,7 +12,7 @@ The folder "numerical_tests" contains the implementation of the test cases from 
 
 Feel free to test these algorithms on your own test cases and/or to play with the proposed ones.
 
-## Installation
+## Quick start
 ### Installation
 
 In order to install the current project locally, please execute the following lines in a terminal:
