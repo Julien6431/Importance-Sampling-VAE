@@ -12,9 +12,10 @@ The folder "numerical_tests" contains the implementation of the test cases from 
 
 Feel free to test these algorithms on your own test cases and/or to play with the proposed ones.
 
-## Import
+## Installation
+### Installation
 
-In order to import the current project locally, please execute the following lines in a terminal:
+In order to install the current project locally, please execute the following lines in a terminal:
 
 ```
 git clone https://github.com/Julien6431/Importance-Sampling-VAE.git
@@ -22,10 +23,14 @@ cd Importance-Sampling-VAE
 ```
 
 
-## Requirements
+### Install requirements
 
 In order to install the required modules, please run the following line in a terminal or in the console:
 
 ```
 pip install -r requirements.txt
 ```
+
+### Code execution
+
+Remember to execute all files in a terminal or in a console from the main folder. 
