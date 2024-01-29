@@ -5,8 +5,8 @@ import openturns as ot
 from tqdm import tqdm
 import sys
 sys.path.append("../cross_entropy/")
-from CE_vMFNM import CEIS_vMFNM
-from CE_VAE import CEIS_VAE
+from cross_entropy.CE_vMFNM import CEIS_vMFNM
+from cross_entropy.CE_VAE import CEIS_VAE
 
 #%% Oscillator test function
 
